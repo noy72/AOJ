@@ -368,134 +368,76 @@ int dividedPolygonNumber(Polygon p, Line l){
     return cnt / 2 + 1;
 }
 
-template < class BidirectionalIterator >
-bool next_combination ( BidirectionalIterator first1 ,
-        BidirectionalIterator last1 ,
-        BidirectionalIterator first2 ,
-        BidirectionalIterator last2 ){
-    if (( first1 == last1 ) || ( first2 == last2 )) {
-        return false ;
-    }
-    BidirectionalIterator m1 = last1 ;
-    BidirectionalIterator m2 = last2 ; --m2;
-    while (--m1 != first1 && !(* m1 < *m2 )){
-    }
-    bool result = (m1 == first1 ) && !(* first1 < *m2 );
-    if (! result ) {
-        while ( first2 != m2 && !(* m1 < * first2 )) {
-            ++ first2 ;
-        }
-        first1 = m1;
-        std :: iter_swap (first1 , first2 );
-        ++ first1 ;
-        ++ first2 ;
-    }
-    if (( first1 != last1 ) && ( first2 != last2 )) {
-        m1 = last1 ; m2 = first2 ;
-        while (( m1 != first1 ) && (m2 != last2 )) {
-            std :: iter_swap (--m1 , m2 );
-            ++ m2;
-        }
-        std :: reverse (first1 , m1 );
-        std :: reverse (first1 , last1 );
-        std :: reverse (m2 , last2 );
-        std :: reverse (first2 , last2 );
-    }
-    return ! result ;
+//i番目のビットを返す
+bool getBit(int num, int i){
+	return ((num & (1 << i)) != 0);
 }
 
-template < class BidirectionalIterator > bool next_combination ( BidirectionalIterator first , BidirectionalIterator middle , BidirectionalIterator last )
-{
-    return next_combination (first , middle , middle , last );
+//i番目を1にする
+int setBit(int num, int i){
+	return num | (1 << i);
 }
 
-//要素vからr個取り出す組み合わせ
-void func(vector<int> v, int r){
-    do{
-    }while(next_combination(v.begin(), v.begin() + r, v.end()));
+//i番目を0にする
+int clearBit(int num, int i){
+	int mask = ~(1 << i);
+	return num & mask;
 }
 
-int n;
+//i番目をvで置き換える
+int updateBit(int num, int i, int v){
+	int mask = ~(1 << i);
+	return (num & mask) | (v << i);
+}
+
+int n, ans;
 
 bool isOver(Circle a, Circle b){
-    return abs(a.c - b.c) < a.r + b.r;
+	return abs(a.c - b.c) < a.r + b.r;
 }
 
-void canUse(Circle c[30], vector<bool> used, int color[30], vector<int> res[4]){
-    //show("canUse")
-    rep(i,n){
-        if(used[i]) continue;
-        bool f = true;
-        range(j,0,i){
-            if(used[j]) continue;
-            if(isOver(c[i], c[j])){
-                f = false;
-                break;
-            }
-        }
-        if(f) res[color[i] - 1].emplace_back(i);
-    }
-}
+vector<short> memo;
+short dfs(int s, vector<int>& on, vector<int>& c){
+	if(memo[s] != -1) return memo[s];
 
-void requireCircleSet(vector<bool> used, vector<int> circles, vector<vector<int>> &cs){
-    //show("requireCircleset")
-    if(circles.size() < 2) return;
-    //rep(i,circles.size()){ cout << circles[i] << endl; }
-    range(i,2,circles.size() + 1){
-        do{
-            vector<int> tmp;
-            rep(j,i){
-                //if(used[j]) continue;
-                //show(circles[j])
-                tmp.emplace_back(circles[j]);
-            }
-            cs.emplace_back(tmp);
-        }while(next_combination(circles.begin(), circles.begin() + i, circles.end()));
-    }
-}
+	int canTake[4][6] = {{0}};
+	int size[4] = {0};
+	rep(i,n){
+		if(getBit(s,i)) continue;
+		if((on[i] bitand s) == on[i]){
+			canTake[c[i]][size[c[i]]++] = i;
+		}
+	}
 
-void dfs(Circle c[30], int color[30], vector<bool> used){
-    int cnt = 0;
-    rep(i,n){ if(used[i]) cnt++; }
+	short res = 0;
+	rep(i,4){
+		rep(j,size[i]){
+			range(k,j + 1, size[i]){
+				int nxt = setBit(setBit(s, canTake[i][j]), canTake[i][k]);
+				res = max<short>(res, dfs(nxt, on, c) + 2);
+			}
+		}
+	}
 
-
-    //show("dfs");
-    vector<int> use[4];
-    canUse(c,used,color,use);
-    //rep(i,4){
-    //    if(use[i].empty()) continue;
-    //    show(use[i].size())
-    //}
-
-    rep(i,4){
-        if(use[i].empty()) continue;
-        vector<vector<int>> circle_set;
-        requireCircleSet(used, use[i], circle_set);
-        if(circle_set.empty()) continue;
-        for(int j = circle_set.size() - 1; j >= 0; j--){
-            vector<bool> tmp = used;
-            for(auto k:circle_set[j]){
-                assert(not tmp[k]);
-                tmp[k] = true;
-            }
-            dfs(c, color, tmp);
-        }
-    }
+	return memo[s] = res;
 }
 
 int main(){
     while(scanf("%d",&n),n){
-        Circle c[30];
-        int color[30];
+        vector<Circle> c(n);
+        vector<int> color(n), on(n,0);
         rep(i,n){
             double x,y,r;
             scanf("%lf%lf%lf%d",&x,&y,&r,&color[i]);
+			color[i]--;
             c[i] = {Point(x,y),r};
+			rep(j,i){
+				if(isOver(c[i], c[j])) on[i] = setBit(on[i], j);
+			}
         }
-        vector<bool> used(30,0);
-        dfs(c,color,used);
 
-        int maxi = 0;
-        cout << maxi << endl;
+		ans = 0;
+		memo = vector<short>(1 << n, -1);
+		cout << dfs(0, on, color) << endl;
     }
 }

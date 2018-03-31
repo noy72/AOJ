@@ -7,15 +7,16 @@ using namespace std;
 
 const int MAX = 55;
 
-struct P{
-    int x, y;
-};
+const int dy[16] = { 0, 1, 0,-1, 1,-1, 1,-1, 0,-2, 0, 2};
+const int dx[16] = { 1, 0,-1, 0, 1, 1,-1,-1, 2, 0,-2, 0};
 
-P d[4][3] = {
-    {P{1,0}, P{0,-1}, P{-1,0}},
-    {P{0,1}, P{1,0}, P{0,-1}},
-    {P{-1,0}, P{0,1}, P{1,0}},
-    {P{0,-1}, P{-1,0}, P{0,1}}
+// 右手法
+// right[d] := d方向（東から時計回り）を向いているときの優先順序
+const int rightHand[4][4] = {
+{1,0,3,2},
+{2,1,0,3},
+{3,2,1,0},
+{0,3,2,1}
 };
 
 int main(){
@@ -24,43 +25,50 @@ int main(){
 
     char m[MAX][MAX];
     rep(i,h + 2) rep(j, w + 2) m[i][j] = '#';
-    int dir = -1;
-    P s = {-1,-1};
 
+    int dir = -1;
+	int y = -1, x = -1;
     range(i,1,h + 1){
         range(j,1,w + 1){
             cin >> m[i][j];
-            if(m[i][j] == '^') dir = 0;
-            else if(m[i][j] == '>') dir = 1;
-            else if(m[i][j] == 'v') dir = 2;
-            else if(m[i][j] == '<') dir = 3;
-            if(dir != -1 && s.x == -1) s = P{j,i};
+            if(m[i][j] == '>') dir = 0;
+            else if(m[i][j] == 'v') dir = 1;
+            else if(m[i][j] == '<') dir = 2;
+            else if(m[i][j] == '^') dir = 3;
+            if(dir != -1 && x == -1){
+				y = i;
+				x = j;
+			}
         }
     }
-    m[s.y][s.x] = '.';
+    m[y][x] = '.';
 
-    int cnt = -1;
-    cout << s.y << ' ' << s.x << endl;
-    while(m[s.y][s.x] != 'G'){
-        show("JI")
-        cnt++;
-        show(dir)
-        cout << s.y << ' ' << s.x << endl;
-        int g;
-        cin >> g;
-        rep(i,3){
-            int ny = s.y + d[dir][i].y;
-            int nx = s.x + d[dir][i].x;
-            show(m[ny][nx])
+	bool u[MAX][MAX] = {{0}};
+	int move = 1e4;
+    while(m[y][x] != 'G'){
+		//cout << x << ' ' << y << endl;
+		move--;
+		if(move == 0) break;
+		u[y][x] = true;
+        rep(i,4){
+			int rh = rightHand[dir][i];
+            int ny = y + dy[rh];
+            int nx = x + dx[rh];
             if(ny < 1 || ny > h || nx < 1 || nx > w) continue;
-            if(m[ny][nx] != '#'){
-                cout << nx << ' ' << ny << endl;
-                s = {nx,ny};
-                continue;
-            }
+            if(m[ny][nx] == '#') continue;
+			x = nx;
+			y = ny;
+			dir = rh;
+			break;
         }
-        cnt--;
-        dir = (dir + 1) % 4;
     }
+
+	if(move == 0){
+		cout << -1 << endl;
+		return 0;
+	}
+
+	int cnt = 1;
+	rep(i,MAX) rep(j,MAX) if(u[i][j]) cnt++;
     cout << cnt << endl;
 }
