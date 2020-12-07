@@ -400,14 +400,97 @@ Point pointSymmetry(Polygon g){
 	return *s.begin();
 }
 
+bool isConnected(vector<Segment>& seg, int a, int b, Point p1, Point p2){
+	Segment e = Segment{p1,p2};
+	range(i,a,b){
+		if(not isIntersectedLs(seg[i], e)) return false;
+	}
+	return true;
+}
+
+struct Edge{
+	int to;
+	double cost;
+	Edge(int to, double cost) : to(to), cost(cost) {}
+};
+
+struct Node{
+	double dis;
+	bool used;
+	Node() : dis(INF), used(false) { }
+	Node(double d, bool f) : dis(d), used(f) { }
+};
+
+typedef vector<vector<Edge>> graph;
+
+double dijkstra(graph g, int s, int n){
+	vector<Node> node(n);
+	priority_queue<pair<double,int>, vector<pair<double, int>>, greater<pair<double, int>>> q;
+
+	q.push(make_pair(0, s));
+	node[s] = Node{0, true};
+
+	while(not q.empty()){
+		double dis;
+		int pos;
+		tie(dis, pos) = q.top(); q.pop();
+		node[pos].used = true;
+
+		for(auto e : g[pos]){
+			if(node[e.to].used == true) continue;
+			if(node[e.to].dis > dis + e.cost){
+				node[e.to].dis = dis + e.cost;
+				q.emplace(node[e.to].dis, e.to);
+			}
+		}
+	}
+	return node[n - 1].dis;
+}
+
+void addEdge(graph& g, int a, int b, double dis){
+	//cout << a << ' ' << b << ' ' << dis << endl;
+	g[a].emplace_back(Edge{b,dis});
+	g[b].emplace_back(Edge{a,dis});
+}
+
 int main(){
 	int n;
-	cin >> n;
+	while(cin >> n,n){
 
-	Circle c[105];
-	rep(i,n){
-		double x, y, r;
-		cin >> x >> y >> r;
-		c[i] = Circle{Point{x,y}, r};
+		vector<Circle> c(n);
+		rep(i,n){
+			double x, y, r;
+			cin >> x >> y >> r;
+			c[i] = Circle{Point{x,y}, r};
+		}
+
+		int s = n - 1;
+		vector<pair<Point,Point>> cr(s);
+		vector<Segment> seg(s);
+		rep(i,s){
+			cr[i] = getCrossPoints(c[i], c[i + 1]);
+			seg[i] = Segment{cr[i].first, cr[i].second};
+		}
+
+		graph g(s * 2 + 2);
+		rep(i,s){
+			range(j,i + 1,s){
+				if(isConnected(seg, i, j, seg[i].p1, seg[j].p1)) addEdge(g, i, j, abs(seg[i].p1 - seg[j].p1));
+				if(isConnected(seg, i, j, seg[i].p1, seg[j].p2)) addEdge(g, i, j + s, abs(seg[i].p1 - seg[j].p2));
+				if(isConnected(seg, i, j, seg[i].p2, seg[j].p1)) addEdge(g, i + s, j, abs(seg[i].p2 - seg[j].p1));
+				if(isConnected(seg, i, j, seg[i].p2, seg[j].p2)) addEdge(g, i + s, j + s, abs(seg[i].p2 - seg[j].p2));
+			}
+		}
+
+		rep(i,s){
+			if(isConnected(seg, 0, i + 1, c[0].c, seg[i].p1)) addEdge(g, s * 2, i, abs(c[0].c - seg[i].p1));
+			if(isConnected(seg, 0, i + 1, c[0].c, seg[i].p2)) addEdge(g, s * 2, i + s, abs(c[0].c - seg[i].p2));
+			if(isConnected(seg, i, s, c[n - 1].c, seg[i].p1)) addEdge(g, s * 2 + 1, i, abs(c[n - 1].c - seg[i].p1));
+			if(isConnected(seg, i, s, c[n - 1].c, seg[i].p2)) addEdge(g, s * 2 + 1, i + s, abs(c[n - 1].c - seg[i].p2));
+		}
+
+		if(isConnected(seg, 0, s, c[0].c, c[n - 1].c)) addEdge(g, s * 2, s * 2 + 1, abs(c[0].c - c[n - 1].c));
+
+		cout << fixed << setprecision(10) << dijkstra(g, s * 2, s * 2 + 2) << endl;
 	}
 }

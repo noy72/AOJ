@@ -5,31 +5,64 @@
 #define show(x)  cerr << #x << " = " << (x) << endl;
 using namespace std;
 
-typedef bitset<15> bit;
+const int INF = 1e8;
+map<vector<bool>, int> memo;
+
+set<int> res;
+
+void dfs(int idx, int& use, vector<vector<bool>>& b, vector<bool> c){
+
+	if(idx  == b.size()){
+		int cnt = 0, p;
+		rep(i,c.size()){
+			if(c[i]){
+				cnt++;
+				p = i;
+			}
+		}
+		if(cnt == 1){
+			res.emplace(p);
+		}
+		return;
+	}
+
+	//if(not any_of(all(c), [](bool b){ return b; })) return;
+
+	if(not (use >> idx & 1)){
+		dfs(idx + 1, use, b, c);
+		return;
+	}
+
+	vector<bool> tmp = c;
+	rep(i,tmp.size()){
+		tmp[i] = tmp[i] and b[idx][i];
+	}
+	dfs(idx + 1, use, b, tmp);
+
+	tmp = c;
+	rep(i,tmp.size()){
+		tmp[i] = tmp[i] and not b[idx][i];
+	}
+	dfs(idx + 1, use ,b, tmp);
+}
 
 int main(){
 	int m, n;
 	while(cin >> m >> n, n){
-		vector<bit> b(n);
+		vector<string> s(n);
 		rep(i,n){
-			string s;
-			cin >> s;
-			b[i] = bit(s);
+			cin >> s[i];
 		}
 
-		size_t ans = 100;
-		for(auto i = 0uL; i < 1uL << m; i++){
-			set<unsigned long> s;
-			bit mask(i);
-			rep(j,n){
-				bit tmp = mask & b[j];
-				s.emplace(tmp.to_ulong());
-			}
-			if(s.size() == n){
-				show(mask.count())
-				ans = min(ans, mask.count());
-			}
-		}
+		//rep(i,m + m){
+		//	rep(j,n){
+		//		cout << b[i][j];
+		//	}
+		//	cout << endl;
+		//}
+
+		int ans = 1e9;
+		dfs(0, s, b, vector<bool>(n, 1));
 		cout << ans << endl;
 	}
 }

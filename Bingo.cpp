@@ -6,33 +6,20 @@
 using namespace std;
 
 const int M = 100000;
-int dp[2005][3005][50];//最後に使った数字、今までに使った数字の合計、今までに使った数字の個数
 
 int main(){
     int n, m, s;
     while(cin >> n >> m >> s,n){
-        memset(dp, 0, sizeof(dp));
-        dp[0][0][0] = 1;
-        rep(i,m + 1){
-            range(j,i,s + 1){
-                range(l,1,n * n + 1){
-                    int sum = 0;
-                    rep(k,i){
-                        sum += dp[k][j - i][l - 1];
-                        sum %= M;
-                    }
-                    //cout << i << ' ' << j << endl;
-                    //show(dp[i][j])
-                    dp[i][j][l] = max(dp[i][j][l],dp[i][j][l - 1]);
-                }
-            }
-        }
+		vector<vector<int>> cur(n * n + 1, vector<int>(s + 1,0));
+		cur[0][0] = 1;
+		range(i,1,m + 1){
+			for (int j = n * n; j > 0; j--) {
+				range(k,i,s + 1){
+					(cur[j][k] += cur[j - 1][k - i]) %= M;
+				}
+			}
+		}
 
-        int sum = 0;
-        rep(i,m + 1){
-            sum += dp[i][s][n * n];
-            sum %= M;
-        }
-        cout << sum << endl;
+        cout << cur[n * n][s] << endl;
     }
 }

@@ -10,78 +10,93 @@ const int N = 105;
 
 int h, w, a;
 char m[N][N];
-bool dis[N][N][15][15][4];
+int dis[N][N][15][15][4];
 
-struct Point{ int x, y, p, q, d; };
-int dy[4] = {0,1,0,-1}, dx[4] = {1,0,-1,0};
+struct T{
+	int c, y, x, p, q, d;
+	T(int c, int y, int x, int p, int q, int d) : c(c),y(y),x(x),p(p),q(q),d(d) {}
+	void tie(int& C, int& Y, int& X, int& P, int& Q, int& D){
+		C=c;Y=y;X=x;P=p;Q=q;D=d;
+	}
 
-int bfs(int h, int w, Point p, Point g){
-	queue<Point> q;
+	bool operator < ( const T &right ) const {
+		return c < right.c;
+	}
+	bool operator > ( const T &right ) const {
+		return c > right.c;
+	}
+};
 
-	if(p.y + 1 > h) return INF;
+//typedef tuple<int,int,int,int,int,int> T;
+int dy[4] = {0,1,0,-1};
+int dx[4] = {1,0,-1,0};
 
-	dis[p.y + 1][p.x][a][a][1] = 1;
-	Point tmp = Point{p.x, p.y + 1, a, a, 1};
-	q.push(tmp);
+int bfs(int h, int w, pair<int, int> s, pair<int, int> g){
+	memset(dis, -1, sizeof(dis));
+	dis[s.first][s.second][a][a][1] = 0;
 
-	while(not q.empty()){
-		Point u = q.front(); q.pop();
-		//cout << u.x << ' ' << u.y << ' ' << u.p << ' ' << u.q << ' ' << u.d << endl;
+	priority_queue<T, vector<T>, greater<T>> que;
+	que.push(T(0, s.first, s.second, a, a, 1));
+
+	while(not que.empty()){
+		int c, y, x, p, q, d;
+		T tmp = que.top(); que.pop();
+		tmp.tie(c,y,x,p,q,d);
+		dis[y][x][p][q][d] = c;
+		if(y == g.first and x == g.second) return dis[y][x][p][q][d];
+
 		rep(i,4){
-			if((u.d + 2) % 4 == i) continue;
+			if((d + 2) % 4 == i) continue;
 
-			Point next;
-			next.x = u.x + dx[i];
-			next.y = u.y + dy[i];
-			next.d = i;
-			next.p = u.p;
-			next.q = u.q;
-			if(u.d == 0 || u.d == 2){
-				if((u.d + 1) % 4 == i){
-					next.p = u.p - 1;
-				}else if((u.d - 1 + 4) % 4 == i){
-					next.q = u.q - 1;
+			int ny = y + dy[i];
+			int nx = x + dx[i];
+			int np = p, nq = q;
+			int nc = c;
+			
+			if(d == 0 || d == 2){
+				if((d + 1) % 4 == i){
+					np = p - 1;
+					nc++;
+				}else if((d - 1 + 4) % 4 == i){
+					nq = q - 1;
+					nc++;
 				}
 			}else{
-				if((u.d + 1) % 4 == i){
-					next.q = u.q - 1;
-				}else if((u.d - 1 + 4) % 4 == i){
-					next.p = u.p - 1;
+				if((d + 1) % 4 == i){
+					nq = q - 1;
+					nc++;
+				}else if((d - 1 + 4) % 4 == i){
+					np = p - 1;
+					nc++;
 				}
 			}
-			if(next.p < 0 || next.q < 0) continue;
+			if(np < 0 || nq < 0) continue;
 
-			if(next.x < 0 || next.x >= w || next.y < 0 || next.y >= h) continue;
+			if(nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+
+			if(m[y][x] == 'S' and d != i) continue;
+			if(m[ny][nx] == 'S' and i % 2 == 1) continue;
+			//cout << ny << ' ' << nx << ' ' << np << ' ' << nq << endl;
 				//cout << next.x << ' ' << next.y << ' ' << next.p << ' ' << next.q << ' ' << next.d << endl;
-			if(not dis[next.y][next.x][next.p][next.q][next.d] && m[next.y][next.x] != '#'){
+			if(dis[ny][nx][np][nq][i] == -1 && m[ny][nx] != '#'){
 				//cout << next.x << ' ' << next.y << ' ' << next.p << ' ' << next.q << ' ' << next.d << endl;
-				dis[next.y][next.x][next.p][next.q][next.d] = 1;
-				q.push(next);
+				que.emplace(nc,ny,nx,np,nq,i);
 			}
 		}
 	}
 
-	int ans = INF;
-	rep(i,a + 1){
-		rep(j,a + 1){
-			rep(k,4){
-				if(dis[g.y][g.x][i][j][k] == false) continue;
-				ans = min(ans, a - i + a - j);
-			}
-		}
-	}
-
-	return ans;
+	return -1;
 }
+
 
 int main(){
 	cin >> h >> w >> a;
 
-	Point s, g;
+	pair<int, int> s, g;
 	rep(i,h) rep(j,w){
 		cin >> m[i][j];
-		if(m[i][j] == 'S') s = Point{j,i};
-		if(m[i][j] == 'G') g = Point{j,i};
+		if(m[i][j] == 'S') s = make_pair(i,j);
+		if(m[i][j] == 'G') g = make_pair(i,j);
 	}
 
 	int ans = bfs(h, w, s, g);

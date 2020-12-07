@@ -3,63 +3,78 @@
 #define rep(i,b) for(int i = 0; i < (b); i++)
 #define all(a) (a).begin(), (a).end()
 #define show(x)  cerr << #x << " = " << (x) << endl;
-//const int INF = 1e8;
 using namespace std;
 
-#define int long long
-
-vector<long long> bit(50);
-vector<int> sum(50);
-int n;
-int maximum;
-int b[50];
-
-bool getBit(int num, int i){
-	return ((num & (1 << i)) != 0);
+template<typename T>
+ostream& operator << (ostream& os, vector<T>& v){
+	rep(i,v.size()){ os << v[i] << (i == v.size() - 1 ? "" : " "); } return os;
+}
+template<typename T>
+istream& operator >> (istream& is, vector<T>& v){
+	for(T& x: v){ is >> x; } return is;
 }
 
-int setBit(int num, int i){
-	return num | (1 << i);
+bool getBit(long long num, int i){
+	return ((num & (1LL << i)) != 0);
 }
 
-void dfs(int p, long long used , int score){
-	maximum = max(maximum, score);
-	if(p == n) return;
-	if(score + sum[p] <= maximum) return;
-	if(not getBit(used,p)) dfs(p + 1, used bitor bit[p], score + b[p]);
-	dfs(p + 1, used, score);
+vector<int> atk, sum;
+vector<long long> bit;
+int maxi;
+
+void input(int n){
+	vector<string> name(n);
+	vector<vector<string>> near(n);
+
+	map<string, int> id;
+	rep(i,n){
+		int d;
+		cin >> name[i] >> atk[i] >> d;
+		id[name[i]] = i;
+		while(d--){
+			string s;
+			cin >> s;
+			near[i].emplace_back(s);
+		}
+	}
+
+	rep(i,n){
+		sum[i + 1] = sum[i] + atk[i];
+	}
+
+	rep(i,n){
+		bit[i] |= 1LL << i;
+		for(auto s : near[i]){
+			bit[i] |= 1LL << id[s];
+		}
+		//cout << bitset<10>(bit[i]) << endl;
+	}
 }
 
-signed main(){
+void dfs(int& n, int i, long long enemy, int total){
+	maxi = max(maxi, total);
+	if(i == n) return;
+	if(total + sum[n] - sum[i] < maxi) return;
+	
+	if(not getBit(enemy,i)){
+		dfs(n, i + 1, enemy bitor bit[i], total + atk[i]);
+	}
+	dfs(n, i + 1, enemy, total);
+}
+
+//map<pair<long long, long long>, int> memo1, memo2;
+vector<int> dp; // dp[s] := 集合sから任意の数, 仲間を選べるときの最大値
+
+int main(){
+	int n;
 	while(cin >> n,n){
-		string a[50], d[50][50];
-		int c[50];
-		map<string,int> id;
+		atk = vector<int>(n);
+		sum = vector<int>(n + 1, 0);
+		bit = vector<long long>(n,0);
+		input(n);
 
-		bit.clear();
-		sum.clear();
-		maximum = 0;
-
-		rep(i,n){
-			cin >> a[i] >> b[i] >> c[i];
-			id[a[i]] = i;
-			rep(j,c[i]){
-				string s;
-				cin >> d[i][j];
-			}
-		}
-		for(int i = n - 1; i >= 0; i--){
-			sum[i] = sum[i + 1] + b[i];
-		}
-		rep(i,n){
-			long long near = 0;
-			rep(j,c[i]){
-				near = setBit(near, id[d[i][j]]);
-			}
-			bit[i] = near;
-		}
-
-		dfs(1, bit[0], b[0]);
-		cout << maximum << endl;
+		maxi = 0;
+		dfs(n, 0, bit[0], atk[0]);
+		cout << maxi << endl;
 	}
 }

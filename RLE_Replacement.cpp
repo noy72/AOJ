@@ -6,58 +6,67 @@
 //const int INF = 1e8;
 using namespace std;
 
+#define int long long
+
 struct Data{
-	list<char> c;
-	list<char>::iterator it_c;
-	list<int> n;
-	list<int>::iterator it_n;
-	Data(){
-		it_c = c.begin();
-		it_n = n.begin();
-	}
-	void next(){
-		it_c++;
-		it_n++;
-	}
-	void reset(){
-		it_c = c.begin();
-		it_n = n.begin();
-	}
+	char c;
+	int n;
+	Data(char c, int n) : c(c), n(n) {}
 };
 
-void parser(Data& a){
+void parser(vector<Data>& a){
 	char chr;
 	int num;
 	while(cin >> chr, chr != '$'){
 		cin >> num;
-		a.c.emplace_back(chr);
-		a.n.emplace_back(num);
+		a.emplace_back(chr, num);
 	}
 }
 
-int main(){
-	Data a, b, c;
+vector<Data> a, b, c, ans;
+
+bool canReplace(int idx){
+	rep(i,b.size()){
+		if(a[i + idx].c != b[i].c) return false;
+		if(i == 0 or i == b.size() - 1){
+			if(a[i + idx].n < b[i].n) return false;
+		}else{
+			if(a[i + idx].n != b[i].n) return false;
+		}
+	}
+	return true;
+}
+
+signed main(){
 	parser(a);
 	parser(b);
 	parser(c);
 
-	while(true){
-		bool f = true;
-		auto cpa = a;
-		while(b.it_c != b.c.end()){
-			if(cpa.it_c == cpa.c.end() or *cpa.it_c != *b.it_c or *cpa.it_n < *b.it_n){
-				f = false;
-				break;
-			}
-			cpa.next();
-			b.next();
-		}
+	rep(i,static_cast<int>(a.size()) - static_cast<int>(b.size()) + 1){
+		if(canReplace(i)){
+			rep(j,i) ans.emplace_back(a[j]);
 
-		if(f){
-			cpa = a;
-			b.reset();
-			while(b.it_c != b.c.end()){
+			if(b.size() > 1){
+				a[i].n -= b[0].n;
+				if(a[i].n > 0) ans.emplace_back(a[i]);
 			}
+			rep(j,c.size()) ans.emplace_back(c[j]);
+
+			a[i + b.size() - 1].n -= b.back().n;
+			if(a[i + b.size() - 1].n > 0) ans.emplace_back(a[i + b.size() - 1]);
+			range(j,i + b.size(), a.size()) ans.emplace_back(a[j]);
+			break;
 		}
 	}
+
+	if(ans.empty()) ans = a;
+
+	rep(i,ans.size()){
+		if(i + 1 < ans.size() and ans[i + 1].c == ans[i].c){
+			ans[i + 1].n += ans[i].n;
+		}else{
+			cout << ans[i].c << ' ' << ans[i].n << ' ';
+		}
+	}
+	cout << '$' << endl;
 }

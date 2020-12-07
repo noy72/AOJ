@@ -3,51 +3,32 @@
 #define rep(i,b) for(int i = 0; i < (b); i++)
 #define all(a) (a).begin(), (a).end()
 #define show(x)  cerr << #x << " = " << (x) << endl;
-//const int INF = 1e8;
 using namespace std;
 
-const int N = 20;
-
-void printMaze(int w, int h, bool M[N][N], int x, int y){
-	rep(i,h + h + 1){
-		rep(j,w + w + 1){
-			if(i == y and j == x) cout << "*";
-			else cout << M[i][j];
-		}
-		cout << endl;
-	}
+template<typename T>
+ostream& operator << (ostream& os, vector<T>& v){
+	rep(i,v.size()){ os << v[i] << (i == v.size() - 1 ? "" : " "); } return os;
+}
+template<typename T>
+istream& operator >> (istream& is, vector<T>& v){
+	for(T& x: v){ is >> x; } return is;
 }
 
-void extensionOfMaze(int w, int h, bool M[N][N]){
-	string s[N];
-	rep(i,N) cin >> s[i];
+const int MAX_N = 100;
 
-	rep(i,N) rep(j,N) M[i][j] = 0;
-	rep(i,h + h - 1){
-		auto it = s[i].begin();
-		if(i % 2 == 0){ //横線
-			for(int j = 0; j < w + w - 1; j++){
-				if(j % 2 == 0) M[i + 1][j + 1] = 1;
-				else{
-					M[i + 1][j + 1] = *it == '1' ? true : false;
-					it++;
-				}
-			}
-		}else{ //縦線
-			for(int j = 0; j < w + w; j++){
-				if(j % 2 == 1) M[i + 1][j + 1] = 0;
-				else{
-					M[i + 1][j + 1] = *it == '1' ? true : false;
-					it++;
-				}
-			}
+// 0 >, 1 v, 2 <, 3 ^
+void getMaze(int n, vector<vector<bool>>& w, bool wall[MAX_N][MAX_N][4]){
+	memset(wall, 0, sizeof(bool) * MAX_N * MAX_N * 4);
+	for (int i = 1; i < w.size(); i+=2) {
+		rep(j,n){
+			if(w[i][j]) wall[i / 2][j][2] = true;
+			if(w[i][j + 1]) wall[i / 2][j][0] = true;
+
+			if(w[i - 1][j]) wall[i / 2][j][3] = true;
+			if(w[i + 1][j]) wall[i / 2][j][1] = true;
 		}
 	}
 }
-
-const char dir[4] = {'R', 'D', 'L', 'U'};
-const int dy[16] = { 0, 1, 0,-1, 1,-1, 1,-1, 0,-2, 0, 2};
-const int dx[16] = { 1, 0,-1, 0, 1, 1,-1,-1, 2, 0,-2, 0};
 
 // 右手法
 // right[d] := d方向（東から時計回り）を向いているときの優先順序
@@ -58,62 +39,46 @@ const int rightHand[4][4] = {
 	{0,3,2,1}
 };
 
-vector<pair<int,char>> getCommand(bool m[N][N]){
-	int y = 0, x = 0;
-	m[y + 1][x] = 1;
+const int dy[16] = { 0, 1, 0,-1, 1,-1, 1,-1, 0,-2, 0, 2};
+const int dx[16] = { 1, 0,-1, 0, 1, 1,-1,-1, 2, 0,-2, 0};
 
-	int d = 0;
-	vector<pair<int,char>> res;
-	while(true){
-		if(y == 2 and x == 0) break;
+const char dir[] = {'R', 'D', 'L', 'U'};
 
+int main(){
+	int n = 6;
+
+	vector<vector<bool>> w(n * 2 + 1, vector<bool>(n + 1));
+	rep(i,n * 2 + 1){
+		string s;
+		if(i <= 1 or i >= n * 2 - 1) s = "0000";
+		else cin >> s;
+		s = "0" + s + "0";
+		rep(j,s.size()) w[i][j] = s[j] == '1' ? true : false;
+	}
+
+	bool wall[MAX_N][MAX_N][4];
+	getMaze(n, w, wall);
+
+	int y = 0, x = 1, d = 0;
+	string ans;
+	while(not (not ans.empty() and y == 0 and x == 0)){
+		//show(ans)
+		//cout << y << ' ' << x << endl;
+		//auto p = wall[y][x];
+		//cout << p[0] << p[1]  << p[2]  << p[3] << endl;
 		rep(i,4){
 			int rh = rightHand[d][i];
+			if(wall[y][x][rh]) continue;
 
 			int ny = y + dy[rh];
 			int nx = x + dx[rh];
-			if(m[ny][nx] == 0){
-				d = rh;
-				y = y + dy[rh] * 2;
-				x = x + dx[rh] * 2;
-
-				int nrh = rightHand[d][0];
-				int ny = y + dy[nrh];
-				int nx = x + dx[nrh];
-				if(m[ny][nx] == 0){
-					y = y + dy[nrh] * 0;
-					x = x + dx[nrh] * 0;
-				}
-				if(res.empty() or res.back().second != dir[d]) res.emplace_back(make_pair(1, dir[d]));
-				else res.back().first++;
-				break;
-			}else{ 
-				if(i == 0) continue;;
-				if(res.empty() or res.back().second != dir[rh]) res.emplace_back(make_pair(1, dir[rh]));
-				else res.back().first++;
-
-			}
-				//break;
-		
-		//printMaze(5,5,m,x,y); cout << endl;
-
-	}
-	return res;
-}
-
-int main(){
-	bool m[N][N];
-	extensionOfMaze(5, 5, m);
-	//printMaze(5, 5, m);
-	
-	vector<pair<int,char>> tmp = getCommand(m);
-	int f = 1;
-	for(auto p : tmp){
-		//cout << p.first << ' ' << p.second << endl;
-		if(p.first == 1) f = 0;
-		rep(i,p.first - f){
-			cout << p.second;
+			if(ny < 0 || ny >= n || nx < 0 || nx >= n) continue;
+			y = ny;
+			x = nx;
+			d = rh;
+			ans += dir[rh];
+			break;
 		}
 	}
-	cout << endl;
+	cout << ans << endl;
 }
